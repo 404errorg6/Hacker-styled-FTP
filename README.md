@@ -1,2 +1,2 @@
 # Hacker-styled-FTP  
-Use python <filename>
+Use python <'filename'>
