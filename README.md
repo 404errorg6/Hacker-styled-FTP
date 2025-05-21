@@ -1,5 +1,6 @@
 # Hacker-styled-FTP  
-![Banner](assets/image.png)  
+![Banner](assets/1.png)  
+![Banner2](assets/2.png)
 It is based on python's `http.server`. Custom CSS added to give it hacker look.
 ## Usage
 1-Use python `<filename>`(On server)  
