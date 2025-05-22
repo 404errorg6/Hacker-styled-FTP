@@ -6,5 +6,5 @@ It is based on python's `http.server`. Custom CSS added to give it hacker look.I
 2-Follow the instructions  
 3-Search `<server-ip>:<port>` in browser to access FTP(On client)  
 ## Preview  
-![Banner](https://github.com/404errorg6/Hacker-styled-FTP/blob/assets/assets/1.png)  
-![Banner2](https://github.com/404errorg6/Hacker-styled-FTP/blob/assets/assets/2.png)  
+![Banner](https://github.com/404errorg6/Hacker-styled-FTP/blob/assets/1.png)  
+![Banner2](https://github.com/404errorg6/Hacker-styled-FTP/blob/assets/2.png)  
