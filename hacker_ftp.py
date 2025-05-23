@@ -175,6 +175,8 @@ td {
 /* Upload form styling */
 .upload {
     margin-top: 1em;
+    flex-direction: row;
+    gap: 0.5em;
     padding: 1em;
     border: 1px solid #00FF00;
     background-color: #002200;
@@ -250,8 +252,8 @@ input[type=submit]:hover {
         r.append('''
         <div class="upload">
             <form enctype="multipart/form-data" method="post" id="uploadForm">
-                <input id="fileInput" name="file" type="file" required>
                 <label for="fileInput" class="file-upload">Choose File</label>
+                <input id="fileInput" name="file" type="file" required style="display:none;">
                 <input type="submit" value="Upload File">
             </form>
         </div>
@@ -291,7 +293,7 @@ def run():
     print("1) Current directory")
     print("2) /storage/emulated/0 (Android default storage)")
     print("3) Custom path")
-    choice = input("Enter choice (1/2/3): ").strip()
+    choice = input("Enter choice (1/2/3): ").strip() or "1"
 
     if choice == '1':
         serve_path = '.'
