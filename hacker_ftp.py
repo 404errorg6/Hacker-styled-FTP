@@ -48,37 +48,30 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
         self.wfile.write(response.encode('utf-8'))
 
     def deal_post_data(self):
-        content_type = self.headers.get('Content-Type')
-        if not content_type:
-            return False, "No Content-Type header"
+    	form = cgi.FieldStorage(
+        	fp=self.rfile,
+        	headers=self.headers,
+        	environ={
+            	'REQUEST_METHOD': 'POST',
+            	'CONTENT_TYPE': self.headers['Content-Type'],
+        	}
+    		)
 
-        ctype, pdict = cgi.parse_header(content_type)
-        if ctype != 'multipart/form-data':
-            return False, "Content-Type not multipart/form-data"
+    	if 'file' not in form or not form['file'].filename:
+        	return False, "No file uploaded or missing filename."
 
-        pdict['boundary'] = bytes(pdict['boundary'], "utf-8")
-        pdict['CONTENT-LENGTH'] = int(self.headers['Content-Length'])
-        try:
-            fields = cgi.parse_multipart(self.rfile, pdict)
-        except Exception as e:
-            return False, f"Error parsing multipart data: {e}"
+    	filename = os.path.basename(form['file'].filename)
+    	file_data = form['file'].file.read()
 
-        if 'file' not in fields:
-            return False, "No file field in form"
+    	dest_path = os.path.join(os.getcwd(), filename)
+    	try:
+        	with open(dest_path, 'wb') as f:
+            		f.write(file_data)
+    	except Exception as e:
+        	return False, f"Failed to save file: {e}"
 
-        file_data = fields['file'][0]
-        filename = self.get_filename(fields)
-        if not filename:
-            return False, "No filename provided"
+    	return True, f"File '{filename}' uploaded successfully."
 
-        dest_path = os.path.join(os.getcwd(), filename)
-        try:
-            with open(dest_path, 'wb') as f:
-                f.write(file_data)
-        except Exception as e:
-            return False, f"Failed to save file: {e}"
-
-        return True, f"File '{filename}' uploaded successfully."
 
     def get_filename(self, fields):
         return "uploaded_file"
@@ -100,7 +93,7 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
         r.append('''
         <style>
             html { box-sizing: border-box; }
-*, *::before, *::after { box-sizing: inherit; }
+	*, *::before, *::after { box-sizing: inherit; }
 body {
     background-color: black;
     color: #00FF00;
@@ -231,6 +224,30 @@ input[type=submit]:hover {
     background-color: #00FF00;
     color: black;
 }
+tr {
+    display: flex;
+    border-bottom: 1px solid #004400;
+    padding: 0.2em 0.5em;
+    transition: background-color 0.5s ease-in-out;
+}
+
+tr:hover {
+    background-color: #002d00; /* darker green */
+    border-left: 4px solid #00cc00;
+    cursor: pointer;
+}
+
+a {
+    color: #00FF00;
+    text-decoration: none;
+    width: 100%;
+    display: inline-block;
+    transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out;
+}
+
+
+
+
 
         </style>
         </head><body>
