@@ -228,7 +228,7 @@ tr {
     display: flex;
     border-bottom: 1px solid #004400;
     padding: 0.2em 0.5em;
-    transition: background-color 0.5s ease-in-out;
+    transition: background-color 0.25s ease-in-out;
 }
 
 tr:hover {
