@@ -28,49 +28,72 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
         response = f"""
         <html>
         <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body {{
-                    background-color: black; color: #00FF00;
-                    font-family: monospace; padding: 1em;
-                }}
-                a {{ color: #00FF00; text-decoration: none; }}
-                a:hover {{ text-decoration: underline; }}
-            </style>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {{
+                background-color: black;
+                color: #00FF00;
+                font-family: monospace;
+                padding: 1em;
+            }}
+            a, button {{
+                color: #00FF00;
+                text-decoration: none;
+                font-family: monospace;
+                background: black;
+                border: 1px solid #00FF00;
+                padding: 0.3em 1em;
+                cursor: pointer;
+                transition: background-color 0.2s, color 0.2s;
+            }}
+            button:hover {{
+                background-color: #00FF00;
+                color: black;
+            }}
+        </style>
         </head>
         <body>
-            <h2>{info}</h2>
-            <a href="..">Back to directory</a>
+        <h2>{info}</h2>
+        <form action="{self.path}" method="get">
+            <button type="submit">Back to directory</button>
+        </form>
         </body>
         </html>
         """
         self.wfile.write(response.encode('utf-8'))
 
+
     def deal_post_data(self):
-    	form = cgi.FieldStorage(
-        	fp=self.rfile,
-        	headers=self.headers,
-        	environ={
-            	'REQUEST_METHOD': 'POST',
-            	'CONTENT_TYPE': self.headers['Content-Type'],
-        	}
-    		)
+        form = cgi.FieldStorage(
+        fp=self.rfile,
+        headers=self.headers,
+        environ={
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': self.headers['Content-Type'],
+        }
+    )
 
-    	if 'file' not in form or not form['file'].filename:
-        	return False, "No file uploaded or missing filename."
+        if 'file' not in form or not form['file'].filename:
+            return False, "No file uploaded or missing filename."
 
-    	filename = os.path.basename(form['file'].filename)
-    	file_data = form['file'].file.read()
+        filename = os.path.basename(form['file'].filename)
+        file_data = form['file'].file.read()
 
-    	dest_path = os.path.join(os.getcwd(), filename)
-    	try:
-        	with open(dest_path, 'wb') as f:
-            		f.write(file_data)
-    	except Exception as e:
-        	return False, f"Failed to save file: {e}"
+    # Correctly placed inside the function
+        upload_dir = self.translate_path(self.path)
+        if not os.path.isdir(upload_dir):
+            upload_dir = os.path.dirname(upload_dir)
+        dest_path = os.path.join(upload_dir, filename)
 
-    	return True, f"File '{filename}' uploaded successfully."
+        try:
+            with open(dest_path, 'wb') as f:
+                f.write(file_data)
+        except Exception as e:
+            return False, f"Failed to save file: {e}"
+
+        return True, f"File '{filename}' uploaded successfully."
+
 
 
     def get_filename(self, fields):
@@ -345,3 +368,4 @@ def run():
 
 if __name__ == '__main__':
     run()
+
