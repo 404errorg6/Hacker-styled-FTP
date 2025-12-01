@@ -3,6 +3,7 @@ import os
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import unquote
 import cgi
+import socket
 
 class HackerHTTPHandler(SimpleHTTPRequestHandler):
     ICONS = {
@@ -360,13 +361,29 @@ a {
         else:
             return self.ICONS['file']
 
+def get_local_ip_address():
+    """
+    Finds and returns the local machine's IP address.
+    """
+    try:
+        # Get the hostname of the local machine
+        hostname = socket.gethostname()
+
+        # Get the IP address associated with the hostname
+        ip_address = socket.gethostbyname(hostname)
+        return ip_address
+
+    except socket.error as e:
+        print(f"Error occurred while trying to get IP address: {e}")
+        return "Could not determine IP address"
+
 def run():
     import sys
     print("Choose directory to serve:")
     print("1) Current directory")
     print("2) /storage/emulated/0 (Android default storage)")
     print("3) Custom path")
-    choice = input("Enter choice (1/2/3): ").strip() or "1"
+    choice = input("Enter choice (1/2/3): ").strip() or "2"
 
     if choice == '1':
         serve_path = '.'
@@ -393,7 +410,12 @@ def run():
     print(f"Starting server on port {port}...")
     server_address = ('', port)
     httpd = HTTPServer(server_address, HackerHTTPHandler)
-    print(f"Open in browser: http://localhost:{port}/")
+
+    ip = get_local_ip_address()
+    if ip.split(".")[0] == "127":
+        ip = "localhost"
+
+    print(f"Open in browser: http://{ip}:{port}/")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
