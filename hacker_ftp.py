@@ -407,7 +407,7 @@ def run():
     os.chdir(os.path.abspath(serve_path))
 
     print(f"Serving directory: {os.getcwd()}")
-    print(f"Starting server on port {port}...")
+    print(f"Starting server on {get_local_ip_address()}:{port}...")
     server_address = ('', port)
     httpd = HTTPServer(server_address, HackerHTTPHandler)
 
