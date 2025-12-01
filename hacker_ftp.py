@@ -361,21 +361,33 @@ a {
         else:
             return self.ICONS['file']
 
-def get_local_ip_address():
+def get_lan_ip_address():
     """
-    Finds and returns the local machine's IP address.
+    Connects to an external service (Google DNS) to determine 
+    the local machine's IP address on the active network interface.
     """
+    s = None # Initialize s outside of try block
     try:
-        # Get the hostname of the local machine
-        hostname = socket.gethostname()
-
-        # Get the IP address associated with the hostname
-        ip_address = socket.gethostbyname(hostname)
+        # Create a UDP socket object
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        
+        # Connect to a known external IP address (e.g., Google's public DNS: 8.8.8.8)
+        # This doesn't send data, it just sets up the connection route.
+        s.connect(("8.8.8.8", 80))
+        
+        # Get the IP address of the socket's connection endpoint (the local machine's IP)
+        ip_address = s.getsockname()[0]
+        
         return ip_address
-
+    
     except socket.error as e:
-        print(f"Error occurred while trying to get IP address: {e}")
-        return "Could not determine IP address"
+        print(f"Error occurred: {e}")
+        return "Could not determine LAN IP address"
+        
+    finally:
+        # Close the socket cleanly if it was created
+        if s:
+            s.close()
 
 def run():
     import sys
@@ -407,11 +419,11 @@ def run():
     os.chdir(os.path.abspath(serve_path))
 
     print(f"Serving directory: {os.getcwd()}")
-    print(f"Starting server on {get_local_ip_address()}:{port}...")
+    print(f"Starting server on {get_lan_ip_address()}:{port}...")
     server_address = ('', port)
     httpd = HTTPServer(server_address, HackerHTTPHandler)
 
-    ip = get_local_ip_address()
+    ip = get_lan_ip_address()
     if ip.split(".")[0] == "127":
         ip = "localhost"
 
