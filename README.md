@@ -4,20 +4,34 @@ It is based on python's `http.server`. Custom CSS added to give it hacker look. 
 
 ## Why make this?  
 
-Ever felt like you want to share something and realize that the other device is computer/phone? Or you don't have data cable with you to share it? Or you don't have the sharing app installed on your phone and don't have any internet access?  
+Ever felt like you want to share something and realize that the other device is computer/phone? Or you don't have data cable with you to share it? Or you don't have the sharing app installed on your phone? Or you don't have any internet access?  
 Well say no more, this tiny python script will solve it all.  
 
 ## Usage
-1-Use `python <filename>`(On server)  
-2-Follow the instructions  
-3-Search `<server-ip>:<port>` in browser to access FTP(On client)  
+**Ensure you have python installed on reciever side before going forward.**  
+
+1. Clone the repo and move in it: 
+   ```bash
+   git clone https://github.com/404errorg6/Hacker-styled-FTP.git
+   cd Hacker-styled-FTP
+   ```
+2. Use `python <hacker-ftp>.py`(On reciever's device)  
+3. Follow the instructions  
+4. Open the generated link in browser of sender's device.
+5. Upload the file from the browser to send it to reciever.  
+
 ## Features
-- File upload
-- Full folder upload
-- View files in browser
-- Aesthetic hacker themed
+- Sharing between different devices(android/windows etc) on same network.
+- File upload.
+- Full folder upload.
+- View files in browser.
+- Aesthetic hacker themed.
 
 ## Preview  
+**On PC:**
 ![Banner](https://github.com/404errorg6/Hacker-styled-FTP/blob/assets/pc1.png)  
 ![Banner2](https://github.com/404errorg6/Hacker-styled-FTP/blob/assets/pc2.png)  
+---
+**On Phone:**  
 ![Banner3](https://github.com/404errorg6/Hacker-styled-FTP/blob/assets/phone.png)
+---
