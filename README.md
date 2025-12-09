@@ -15,7 +15,7 @@ Well say no more, this tiny python script will solve it all.
    git clone https://github.com/404errorg6/Hacker-styled-FTP.git
    cd Hacker-styled-FTP
    ```
-2. Use `python <hacker-ftp>.py`(On reciever's device)  
+2. Use `python hacker_ftp.py`(On reciever's device)  
 3. Follow the instructions  
 4. Open the generated link in browser of sender's device.
 5. Upload the file from the browser to send it to reciever.  
