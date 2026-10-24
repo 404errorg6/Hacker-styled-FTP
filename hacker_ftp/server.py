@@ -1,9 +1,9 @@
-
 import os
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import unquote
 import cgi
 import socket
+
 
 class HackerHTTPHandler(SimpleHTTPRequestHandler):
     ICONS = {
@@ -19,7 +19,11 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
         if os.path.isdir(path):
             self.list_directory_with_upload(path)
         else:
-            super().do_GET()
+            try:
+                super().do_GET()
+            except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+                # Client cancelled download
+                pass
 
     def do_POST(self):
         r, info = self.deal_post_data()
@@ -62,16 +66,21 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
         </body>
         </html>
         """
-        self.wfile.write(response.encode('utf-8'))
+        try:
+            self.wfile.write(response.encode('utf-8'))
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            # Client disconnected before response completed (e.g., during page reload)
+            pass
 
 
     def deal_post_data(self):
+        content_type = self.headers.get('Content-Type', '')
         form = cgi.FieldStorage(
             fp=self.rfile,
             headers=self.headers,
             environ={
                 'REQUEST_METHOD': 'POST',
-                'CONTENT_TYPE': self.headers['Content-Type'],
+                'CONTENT_TYPE': content_type,
             }
         )
 
@@ -91,15 +100,31 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
             if not getattr(item, 'filename', None):
                 continue
             rel_path = item.filename.replace('\\', '/')  # normalize Windows paths
-            secure_path = os.path.normpath(rel_path).lstrip(os.sep)  # avoid absolute path
+            # Fix path traversal: remove any .. segments and ensure relative path
+            secure_path = os.path.normpath(rel_path).lstrip(os.sep)
+            # Additional check: ensure no .. components remain
+            if '..' in secure_path.split(os.sep):
+                return False, f"Invalid filename '{secure_path}': path traversal not allowed."
             dest_path = os.path.join(base_upload_dir, secure_path)
+
+            # Ensure destination is within base_upload_dir
+            dest_path = os.path.abspath(dest_path)
+            base_upload_dir_abs = os.path.abspath(base_upload_dir)
+            if not dest_path.startswith(base_upload_dir_abs):
+                return False, f"Invalid path '{secure_path}': outside upload directory."
 
             dest_dir = os.path.dirname(dest_path)
             os.makedirs(dest_dir, exist_ok=True)  # create subdirectories
 
             try:
+                # Read in chunks to handle large files
+                chunk_size = 8192  # 8KB chunks
                 with open(dest_path, 'wb') as f:
-                    f.write(item.file.read())
+                    while True:
+                        chunk = item.file.read(chunk_size)
+                        if not chunk:
+                            break
+                        f.write(chunk)
                 saved_files.append(secure_path)
             except Exception as e:
                 return False, f"Failed to save file '{secure_path}': {e}"
@@ -214,6 +239,89 @@ td {
     flex-wrap: nowrap;
     align-items: center;
 }
+
+/* Progress bar styling */
+.header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1em;
+    padding: 0.5em;
+    border: 1px solid #00FF00;
+    background-color: #002200;
+}
+
+.transfers-toggle {
+    background: black;
+    border: 1px solid #00FF00;
+    color: #00FF00;
+    font-family: monospace;
+    font-size: 1em;
+    padding: 0.3em 1em;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.transfers-toggle:hover {
+    background-color: #00FF00;
+    color: black;
+}
+
+.transfers-toggle.active {
+    background-color: #00FF00;
+    color: black;
+}
+
+.progress-container {
+    width: 100%;
+    max-width: 500px;
+    margin-top: 1em;
+    padding: 1em;
+    border: 1px solid #00FF00;
+    background-color: #002200;
+    display: none;
+}
+
+.progress-container.show {
+    display: block;
+}
+
+.transfer-info {
+    margin-bottom: 0.5em;
+    font-size: 0.9em;
+}
+
+.transfer-filename {
+    font-weight: bold;
+    margin-bottom: 0.3em;
+    word-break: break-all;
+}
+
+.transfer-size {
+    font-size: 0.85em;
+    color: #00CC00;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #001100;
+    border: 1px solid #00FF00;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #00FF00;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    margin-top: 0.5em;
+    text-align: center;
+    font-size: 0.9em;
+}
 input[type=file] {
     flex-grow: 1;
     background: black;
@@ -288,6 +396,22 @@ a {
         </style>
         </head><body>
         ''')
+        r.append('''
+        <div class="header-bar">
+            <div></div>
+            <button class="transfers-toggle" id="transfersToggle">Transfers (0)</button>
+        </div>
+        <div class="progress-container" id="progressContainer">
+            <div class="transfer-info">
+                <div class="transfer-filename" id="transferFilename">No active transfers</div>
+                <div class="transfer-size" id="transferSize"></div>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText"></div>
+        </div>
+        ''')
         r.append(f'<h2>Index of {displaypath}</h2><hr>')
         r.append('<table><tr><th class="icon">Type</th><th>Name</th></tr>')
 
@@ -316,6 +440,31 @@ a {
             </div>
 
             <script>
+                let activeTransfers = 0;
+
+                function formatBytes(bytes) {
+                    if (bytes === 0) return '0 B';
+                    const k = 1024;
+                    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                }
+
+                function updateTransfersButton() {
+                    const toggle = document.getElementById("transfersToggle");
+                    toggle.textContent = `Transfers (${activeTransfers})`;
+                    if (activeTransfers > 0) {
+                        toggle.classList.add("active");
+                    } else {
+                        toggle.classList.remove("active");
+                    }
+                }
+
+                document.getElementById("transfersToggle").addEventListener("click", function() {
+                    const progressContainer = document.getElementById("progressContainer");
+                    progressContainer.classList.toggle("show");
+                });
+
                 function updateLabel(inputId, labelText) {
                     const input = document.getElementById(inputId);
                     const label = document.querySelector(`label[for=${inputId}]`);
@@ -326,14 +475,81 @@ a {
                 }
                 updateLabel('fileInput', 'Upload File(s)');
                 updateLabel('folderInput', 'Upload Folder');
-                            document.getElementById("uploadForm").addEventListener("submit", function(e) {
-                const folderFiles = document.getElementById("folderInput").files;
-                const fileFiles = document.getElementById("fileInput").files;
-                if (folderFiles.length === 0 && fileFiles.length === 0) {
+
+                document.getElementById("uploadForm").addEventListener("submit", function(e) {
+                    const folderFiles = document.getElementById("folderInput").files;
+                    const fileFiles = document.getElementById("fileInput").files;
+                    if (folderFiles.length === 0 && fileFiles.length === 0) {
+                        e.preventDefault();
+                        alert("Please select at least one file or folder to upload.");
+                        return;
+                    }
+
+                    // Show progress bar
+                    const progressContainer = document.getElementById("progressContainer");
+                    const progressFill = document.getElementById("progressFill");
+                    const progressText = document.getElementById("progressText");
+                    const transferFilename = document.getElementById("transferFilename");
+                    const transferSize = document.getElementById("transferSize");
+                    progressContainer.classList.add("show");
+
+                    // Get all selected files
+                    const allFiles = folderFiles.length > 0 ? folderFiles : fileFiles;
+                    const totalSize = Array.from(allFiles).reduce((sum, f) => sum + f.size, 0);
+                    const fileCount = allFiles.length;
+                    let displayName;
+                    if (folderFiles.length > 0) {
+                        displayName = fileCount === 1 ? "1 file (folder)" : `${fileCount} files (folder)`;
+                    } else {
+                        displayName = fileCount === 1 ? allFiles[0].name : `${fileCount} files`;
+                    }
+
+                    transferFilename.textContent = displayName;
+                    transferSize.textContent = formatBytes(totalSize);
+                    progressText.textContent = "0%";
+
+                    // Use XMLHttpRequest for upload progress
                     e.preventDefault();
-                    alert("Please select at least one file or folder to upload.");
-                }
-            });
+                    const formData = new FormData(this);
+                    const xhr = new XMLHttpRequest();
+
+                    activeTransfers++;
+                    updateTransfersButton();
+
+                    xhr.upload.addEventListener("progress", function(e) {
+                        if (e.lengthComputable) {
+                            const percentComplete = (e.loaded / e.total) * 100;
+                            progressFill.style.width = percentComplete + "%";
+                            progressText.textContent = Math.round(percentComplete) + "%";
+                            transferSize.textContent = `${formatBytes(e.loaded)} / ${formatBytes(e.total)}`;
+                        }
+                    });
+
+                    xhr.addEventListener("load", function() {
+                        activeTransfers--;
+                        updateTransfersButton();
+                        if (xhr.status === 200) {
+                            progressText.textContent = "Upload complete!";
+                            transferSize.textContent = `${formatBytes(totalSize)} / ${formatBytes(totalSize)}`;
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            progressText.textContent = "Upload failed!";
+                            progressFill.style.backgroundColor = "#FF0000";
+                        }
+                    });
+
+                    xhr.addEventListener("error", function() {
+                        activeTransfers--;
+                        updateTransfersButton();
+                        progressText.textContent = "Upload error!";
+                        progressFill.style.backgroundColor = "#FF0000";
+                    });
+
+                    xhr.open("POST", window.location.href);
+                    xhr.send(formData);
+                });
 
 
             </script>
@@ -345,7 +561,11 @@ a {
         self.send_header("Content-type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
-        self.wfile.write(encoded)
+        try:
+            self.wfile.write(encoded)
+        except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
+            # Client disconnected before response completed
+            pass
         return None
 
     def get_icon(self, name, is_dir):
@@ -360,6 +580,7 @@ a {
             return self.ICONS['archive']
         else:
             return self.ICONS['file']
+
 
 def get_lan_ip_address():
     """
@@ -388,52 +609,3 @@ def get_lan_ip_address():
         # Close the socket cleanly if it was created
         if s:
             s.close()
-
-def run():
-    import sys
-    print("Choose directory to serve:")
-    print("1) Current directory")
-    print("2) /storage/emulated/0 (Android default storage)")
-    print("3) Custom path")
-    choice = input("Enter choice (1/2/3): ").strip() or "2"
-
-    if choice == '1':
-        serve_path = '.'
-    elif choice == '2':
-        serve_path = '/storage/emulated/0'
-    elif choice == '3':
-        serve_path = input("Enter full custom path: ").strip()
-        if serve_path == '':
-            print("Empty path, exiting.")
-            sys.exit(1)
-    else:
-        print("Invalid choice, exiting.")
-        sys.exit(1)
-
-    if not os.path.isdir(serve_path):
-        print(f"Error: {serve_path} is not a directory.")
-        sys.exit(1)
-
-    port_input = input("Enter port number (default 8080): ").strip()
-    port = int(port_input) if port_input.isdigit() else 8080
-    os.chdir(os.path.abspath(serve_path))
-
-    print(f"Serving directory: {os.getcwd()}")
-    print(f"Starting server on {get_lan_ip_address()}:{port}...")
-    server_address = ('', port)
-    httpd = HTTPServer(server_address, HackerHTTPHandler)
-
-    ip = get_lan_ip_address()
-    if ip.split(".")[0] == "127":
-        ip = "localhost"
-
-    print(f"Open in browser: http://{ip}:{port}/")
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        print("\nServer stopped.")
-
-if __name__ == '__main__':
-    run()
-
-
