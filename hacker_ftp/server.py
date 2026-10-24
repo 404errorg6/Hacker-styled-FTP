@@ -189,6 +189,7 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
                 overflow-y: auto;
                 overflow-x: hidden;
                 padding-right: 5px;
+                scroll-behavior: smooth;
             }
 
             .content-section::-webkit-scrollbar {
@@ -202,6 +203,41 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
             .content-section::-webkit-scrollbar-thumb {
                 background: #00ff41;
                 border-radius: 4px;
+                transition: background 0.3s ease;
+            }
+
+            .content-section::-webkit-scrollbar-thumb:hover {
+                background: #00cc33;
+            }
+
+            table {
+                animation: fadeIn 0.5s ease-in;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            tr {
+                animation: slideIn 0.3s ease-out;
+            }
+
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateX(-20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
             }
 
             .footer-section {
@@ -262,18 +298,43 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
                 transition: all 0.3s ease;
                 text-transform: uppercase;
                 letter-spacing: 1px;
+                position: relative;
+                overflow: hidden;
             }
 
             .transfers-toggle:hover {
                 background: #00ff41;
                 color: #0a0a0a;
                 box-shadow: 0 0 20px #00ff41;
+                transform: translateY(-2px);
+            }
+
+            .transfers-toggle:active {
+                transform: translateY(0) scale(0.95);
             }
 
             .transfers-toggle.active {
                 background: #00ff41;
                 color: #0a0a0a;
                 box-shadow: 0 0 20px #00ff41;
+            }
+
+            .transfers-toggle::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                border-radius: 50%;
+                background: rgba(0, 255, 65, 0.3);
+                transform: translate(-50%, -50%);
+                transition: width 0.3s, height 0.3s;
+            }
+
+            .transfers-toggle:active::after {
+                width: 200px;
+                height: 200px;
             }
 
             .progress-container {
@@ -363,24 +424,23 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
 
             tr {
                 transition: all 0.3s ease;
+                cursor: pointer;
             }
 
             tr:hover {
                 background-color: #0d1a0d;
                 border-left: 3px solid #00ff41;
+                transform: translateX(5px);
             }
 
-            a {
-                color: #00ff41;
-                text-decoration: none;
-                display: block;
-                transition: all 0.3s ease;
-            }
-
-            a:hover {
+            tr:hover td {
                 color: #00cc33;
                 text-shadow: 0 0 10px #00ff41;
-                padding-left: 10px;
+            }
+
+            tr:active {
+                transform: translateX(2px) scale(0.98);
+                background-color: #003300;
             }
 
             .icon {
@@ -395,11 +455,16 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
                 display: inline-block;
                 vertical-align: middle;
                 filter: drop-shadow(0 0 2px #00ff41);
-                transition: filter 0.3s ease;
+                transition: filter 0.3s ease, transform 0.3s ease;
             }
 
             tr:hover .icon svg {
                 filter: drop-shadow(0 0 5px #00ff41);
+                transform: scale(1.1);
+            }
+
+            tr:active .icon svg {
+                transform: scale(0.95);
             }
 
             .upload {
@@ -430,12 +495,37 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
                 transition: all 0.3s ease;
                 text-transform: uppercase;
                 letter-spacing: 1px;
+                position: relative;
+                overflow: hidden;
             }
 
             label.file-upload:hover {
                 background: #00ff41;
                 color: #0a0a0a;
                 box-shadow: 0 0 20px #00ff41;
+                transform: translateY(-2px);
+            }
+
+            label.file-upload:active {
+                transform: translateY(0) scale(0.95);
+            }
+
+            label.file-upload::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                border-radius: 50%;
+                background: rgba(0, 255, 65, 0.3);
+                transform: translate(-50%, -50%);
+                transition: width 0.3s, height 0.3s;
+            }
+
+            label.file-upload:active::after {
+                width: 200px;
+                height: 200px;
             }
 
             input[type=submit] {
@@ -449,12 +539,37 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
                 transition: all 0.3s ease;
                 text-transform: uppercase;
                 letter-spacing: 1px;
+                position: relative;
+                overflow: hidden;
             }
 
             input[type=submit]:hover {
                 background: #00ff41;
                 color: #0a0a0a;
                 box-shadow: 0 0 20px #00ff41;
+                transform: translateY(-2px);
+            }
+
+            input[type=submit]:active {
+                transform: translateY(0) scale(0.95);
+            }
+
+            input[type=submit]::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 0;
+                height: 0;
+                border-radius: 50%;
+                background: rgba(0, 255, 65, 0.3);
+                transform: translate(-50%, -50%);
+                transition: width 0.3s, height 0.3s;
+            }
+
+            input[type=submit]:active::after {
+                width: 200px;
+                height: 200px;
             }
 
             @media (max-width: 600px) {
@@ -497,7 +612,7 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
 
         if displaypath != '/':
             up_icon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff41" stroke-width="1.5"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>'
-            r.append(f'<tr><td class="icon">{up_icon}</td><td><a href="..">[..]</a></td><td class="size">-</td></tr>')
+            r.append(f'<tr onclick="window.location.href=\'..\'"><td class="icon">{up_icon}</td><td>[..]</td><td class="size">-</td></tr>')
 
         for name in entries:
             fullname = os.path.join(path, name)
@@ -514,7 +629,7 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
                 except OSError:
                     size_str = "?"
 
-            r.append(f'<tr><td class="icon">{icon}</td><td><a href="{linkname}">{displayname}</a></td><td class="size">{size_str}</td></tr>')
+            r.append(f'<tr onclick="window.location.href=\'{linkname}\'"><td class="icon">{icon}</td><td>{displayname}</td><td class="size">{size_str}</td></tr>')
 
         r.append('</table><hr>')
         r.append('</div>')
@@ -560,6 +675,47 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
                     const progressContainer = document.getElementById("progressContainer");
                     progressContainer.classList.toggle("show");
                 });
+
+                // Touch feedback for mobile
+                const touchElements = document.querySelectorAll('tr, label.file-upload, input[type=submit], .transfers-toggle');
+                touchElements.forEach(el => {
+                    el.addEventListener('touchstart', function() {
+                        this.style.transform = 'scale(0.95)';
+                    });
+                    el.addEventListener('touchend', function() {
+                        this.style.transform = '';
+                    });
+                });
+
+                // Swipe gestures
+                let touchStartY = 0;
+                let touchEndY = 0;
+                const contentSection = document.querySelector('.content-section');
+
+                if (contentSection) {
+                    contentSection.addEventListener('touchstart', e => {
+                        touchStartY = e.changedTouches[0].screenY;
+                    }, false);
+
+                    contentSection.addEventListener('touchend', e => {
+                        touchEndY = e.changedTouches[0].screenY;
+                        handleSwipe();
+                    }, false);
+
+                    function handleSwipe() {
+                        if (touchEndY < touchStartY - 50) {
+                            // Swipe up - scroll to upload section
+                            const uploadSection = document.querySelector('.upload');
+                            if (uploadSection) {
+                                uploadSection.scrollIntoView({ behavior: 'smooth' });
+                            }
+                        }
+                        if (touchEndY > touchStartY + 50) {
+                            // Swipe down - scroll to top
+                            contentSection.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                    }
+                }
 
                 function updateLabel(inputId, labelText) {
                     const input = document.getElementById(inputId);
