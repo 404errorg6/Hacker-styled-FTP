@@ -7,11 +7,11 @@ import socket
 
 class HackerHTTPHandler(SimpleHTTPRequestHandler):
     ICONS = {
-        'folder': '\u2554\u2550\u2550\u2550\u2557',
-        'file': '\u250F\u2501\u2501\u2501\u2513',
-        'image': '\u255A\u2550\u2665\u2550\u255D',
-        'video': '\u255A\u2550\u25B6\u2550\u255D',
-        'archive': '\u255A\u2550\u25A1\u2550\u255D'
+        'folder': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff41" stroke-width="1.5"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3 3-3"></path></svg>',
+        'file': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff41" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>',
+        'image': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff41" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>',
+        'video': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff41" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>',
+        'archive': '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff41" stroke-width="1.5"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line><line x1="12" y1="12" x2="12" y2="15"></line></svg>'
     }
 
     def do_GET(self):
@@ -153,252 +153,330 @@ class HackerHTTPHandler(SimpleHTTPRequestHandler):
         r.append('<meta name="viewport" content="width=device-width, initial-scale=1">')
         r.append('''
         <style>
-            html { box-sizing: border-box; }
-	*, *::before, *::after { box-sizing: inherit; }
-body {
-    background-color: black;
-    color: #00FF00;
-    font-family: monospace;
-    margin: 0; padding: 1em;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-a { color: #00FF00; text-decoration: none; }
-a:hover { text-decoration: underline; }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
 
-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    border-bottom: 2px solid #006600; /* bottom border for entire table */
-}
+            body {
+                background-color: #0a0a0a;
+                color: #00ff41;
+                font-family: 'Courier New', 'Consolas', monospace;
+                padding: 0;
+                min-height: 100vh;
+                line-height: 1.6;
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                overflow: hidden;
+            }
 
-tr {
-    display: block;
-    border-bottom: 1px solid #006600; /* full width separator line */
-    width: 100%;
-    box-sizing: border-box;
-}
+            .app-container {
+                display: flex;
+                flex-direction: column;
+                height: 100vh;
+                padding: 20px;
+                gap: 15px;
+            }
 
-th, td {
-    border-bottom: none; /* remove cell borders */
-    display: inline-block;
-    vertical-align: middle;
-}
+            .header-section {
+                flex-shrink: 0;
+            }
 
-th {
-    width: 5ch; /* fixed width for icon column */
-    font-weight: bold;
-    text-align: center;
-}
+            .content-section {
+                flex: 1;
+                overflow-y: auto;
+                overflow-x: hidden;
+                padding-right: 5px;
+            }
 
-td:not(:first-child) {
-    width: calc(100% - 5ch); /* rest of the width for filename */
-    word-break: break-word;
-    text-align: left;
-    padding-left: 0.5em;
-}
+            .content-section::-webkit-scrollbar {
+                width: 8px;
+            }
 
-th {
-    padding: 0.5em;
-}
+            .content-section::-webkit-scrollbar-track {
+                background: #0a0a0a;
+            }
 
-td {
-    padding: 0.5em;
-}
+            .content-section::-webkit-scrollbar-thumb {
+                background: #00ff41;
+                border-radius: 4px;
+            }
 
-/* Responsive tweaks */
-@media (max-width: 600px) {
-    body {
-        padding: 0.5em;
-        font-size: 0.9em;
-    }
-    th, td {
-        padding: 0.3em;
-    }
-    th {
-        width: 3ch;
-        font-size: 0.8em;
-    }
-    td:not(:first-child) {
-        width: calc(100% - 3ch);
-    }
-}
+            .footer-section {
+                flex-shrink: 0;
+            }
 
-/* Upload form styling */
-.upload {
-    margin-top: 1em;
-    flex-direction: row;
-    gap: 0.5em;
-    padding: 1em;
-    border: 1px solid #00FF00;
-    background-color: #002200;
-    max-width: 400px;
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-}
+            h2 {
+                font-size: 1.5em;
+                margin-bottom: 10px;
+                text-shadow: 0 0 10px #00ff41;
+                letter-spacing: 2px;
+            }
 
-/* Progress bar styling */
-.header-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1em;
-    padding: 0.5em;
-    border: 1px solid #00FF00;
-    background-color: #002200;
-}
+            h2::after {
+                content: '_';
+                animation: blink 1s infinite;
+            }
 
-.transfers-toggle {
-    background: black;
-    border: 1px solid #00FF00;
-    color: #00FF00;
-    font-family: monospace;
-    font-size: 1em;
-    padding: 0.3em 1em;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s;
-}
+            @keyframes blink {
+                0%, 50% { opacity: 1; }
+                51%, 100% { opacity: 0; }
+            }
 
-.transfers-toggle:hover {
-    background-color: #00FF00;
-    color: black;
-}
+            hr {
+                border: none;
+                border-top: 1px solid #00ff41;
+                margin: 15px 0;
+                box-shadow: 0 0 5px #00ff41;
+            }
 
-.transfers-toggle.active {
-    background-color: #00FF00;
-    color: black;
-}
+            .header-section {
+                margin-bottom: 0;
+            }
 
-.progress-container {
-    width: 100%;
-    max-width: 500px;
-    margin-top: 1em;
-    padding: 1em;
-    border: 1px solid #00FF00;
-    background-color: #002200;
-    display: none;
-}
+            .footer-section {
+                margin-top: 15px;
+            }
 
-.progress-container.show {
-    display: block;
-}
+            .header-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+                padding: 15px;
+                border: 1px solid #00ff41;
+                background: linear-gradient(135deg, #0d1a0d 0%, #0a0a0a 100%);
+                box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            }
 
-.transfer-info {
-    margin-bottom: 0.5em;
-    font-size: 0.9em;
-}
+            .transfers-toggle {
+                background: transparent;
+                border: 1px solid #00ff41;
+                color: #00ff41;
+                font-family: 'Courier New', 'Consolas', monospace;
+                font-size: 0.9em;
+                padding: 8px 16px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
 
-.transfer-filename {
-    font-weight: bold;
-    margin-bottom: 0.3em;
-    word-break: break-all;
-}
+            .transfers-toggle:hover {
+                background: #00ff41;
+                color: #0a0a0a;
+                box-shadow: 0 0 20px #00ff41;
+            }
 
-.transfer-size {
-    font-size: 0.85em;
-    color: #00CC00;
-}
+            .transfers-toggle.active {
+                background: #00ff41;
+                color: #0a0a0a;
+                box-shadow: 0 0 20px #00ff41;
+            }
 
-.progress-bar {
-    width: 100%;
-    height: 20px;
-    background-color: #001100;
-    border: 1px solid #00FF00;
-    position: relative;
-}
+            .progress-container {
+                width: 100%;
+                max-width: 600px;
+                margin: 0 auto 15px auto;
+                padding: 20px;
+                border: 1px solid #00ff41;
+                background: #0d1a0d;
+                display: none;
+                box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            }
 
-.progress-fill {
-    height: 100%;
-    background-color: #00FF00;
-    width: 0%;
-    transition: width 0.3s ease;
-}
+            .progress-container.show {
+                display: block;
+            }
 
-.progress-text {
-    margin-top: 0.5em;
-    text-align: center;
-    font-size: 0.9em;
-}
-input[type=file] {
-    flex-grow: 1;
-    background: black;
-    border: 1px solid #00FF00;
-    color: #00FF00;
-    font-family: monospace;
-    font-size: 1em;
-    padding: 0.2em 0.5em;
-    cursor: pointer;
-}
-input[type=file]::-webkit-file-upload-button,
-input[type=file]::file-selector-button {
-    visibility: hidden;
-}
-label.file-upload {
-    background: black;
-    border: 1px solid #00FF00;
-    color: #00FF00;
-    font-family: monospace;
-    font-size: 1em;
-    padding: 0.3em 1em;
-    cursor: pointer;
-    margin-left: 0.5em;
-    user-select: none;
-    transition: background-color 0.2s, color 0.2s;
-}
-label.file-upload:hover {
-    background-color: #00FF00;
-    color: black;
-}
-input[type=submit] {
-    background: black;
-    border: 1px solid #00FF00;
-    color: #00FF00;
-    font-family: monospace;
-    font-size: 1em;
-    padding: 0.3em 1em;
-    cursor: pointer;
-    margin-left: 0.5em;
-    user-select: none;
-    transition: background-color 0.2s, color 0.2s;
-}
-input[type=submit]:hover {
-    background-color: #00FF00;
-    color: black;
-}
-tr {
-    display: flex;
-    border-bottom: 1px solid #004400;
-    padding: 0.2em 0.5em;
-    transition: background-color 0.25s ease-in-out;
-}
+            .transfer-info {
+                margin-bottom: 15px;
+            }
 
-tr:hover {
-    background-color: #002d00; /* darker green */
-    border-left: 4px solid #00cc00;
-    cursor: pointer;
-}
+            .transfer-filename {
+                font-weight: bold;
+                margin-bottom: 8px;
+                word-break: break-all;
+                font-size: 1.1em;
+                color: #00ff41;
+            }
 
-a {
-    color: #00FF00;
-    text-decoration: none;
-    width: 100%;
-    display: inline-block;
-    transition: background-color 0.4s ease-in-out, color 0.4s ease-in-out;
-}
+            .transfer-size {
+                font-size: 0.9em;
+                color: #00cc33;
+            }
 
+            .progress-bar {
+                width: 100%;
+                height: 25px;
+                background-color: #0a0a0a;
+                border: 1px solid #00ff41;
+                position: relative;
+                overflow: hidden;
+            }
 
+            .progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #00ff41 0%, #00cc33 100%);
+                width: 0%;
+                transition: width 0.3s ease;
+                box-shadow: 0 0 10px #00ff41;
+            }
 
+            .progress-text {
+                margin-top: 10px;
+                text-align: center;
+                font-size: 1em;
+                color: #00ff41;
+            }
 
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+            }
 
+            th {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 2px solid #00ff41;
+                font-size: 0.9em;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                color: #00ff41;
+            }
+
+            td {
+                padding: 12px;
+                border-bottom: 1px solid #003300;
+            }
+
+            .size {
+                text-align: right;
+                color: #00cc33;
+                font-size: 0.85em;
+                width: 120px;
+                white-space: nowrap;
+            }
+
+            tr {
+                transition: all 0.3s ease;
+            }
+
+            tr:hover {
+                background-color: #0d1a0d;
+                border-left: 3px solid #00ff41;
+            }
+
+            a {
+                color: #00ff41;
+                text-decoration: none;
+                display: block;
+                transition: all 0.3s ease;
+            }
+
+            a:hover {
+                color: #00cc33;
+                text-shadow: 0 0 10px #00ff41;
+                padding-left: 10px;
+            }
+
+            .icon {
+                font-weight: bold;
+                text-align: center;
+                width: 50px;
+                color: #00ff41;
+                font-size: 0.9em;
+            }
+
+            .icon svg {
+                display: inline-block;
+                vertical-align: middle;
+                filter: drop-shadow(0 0 2px #00ff41);
+                transition: filter 0.3s ease;
+            }
+
+            tr:hover .icon svg {
+                filter: drop-shadow(0 0 5px #00ff41);
+            }
+
+            .upload {
+                margin: 0;
+                padding: 20px;
+                border: 1px solid #00ff41;
+                background: linear-gradient(135deg, #0d1a0d 0%, #0a0a0a 100%);
+                max-width: 600px;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                align-items: center;
+                box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            }
+
+            input[type=file] {
+                display: none;
+            }
+
+            label.file-upload {
+                background: transparent;
+                border: 1px solid #00ff41;
+                color: #00ff41;
+                font-family: 'Courier New', 'Consolas', monospace;
+                font-size: 0.9em;
+                padding: 10px 20px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            label.file-upload:hover {
+                background: #00ff41;
+                color: #0a0a0a;
+                box-shadow: 0 0 20px #00ff41;
+            }
+
+            input[type=submit] {
+                background: transparent;
+                border: 1px solid #00ff41;
+                color: #00ff41;
+                font-family: 'Courier New', 'Consolas', monospace;
+                font-size: 0.9em;
+                padding: 10px 20px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            input[type=submit]:hover {
+                background: #00ff41;
+                color: #0a0a0a;
+                box-shadow: 0 0 20px #00ff41;
+            }
+
+            @media (max-width: 600px) {
+                .app-container {
+                    padding: 10px;
+                }
+                .upload {
+                    flex-direction: column;
+                }
+                .header-bar {
+                    flex-direction: column;
+                    gap: 10px;
+                }
+            }
         </style>
         </head><body>
         ''')
+        r.append('<div class="app-container">')
+        r.append('<div class="header-section">')
         r.append('''
         <div class="header-bar">
-            <div></div>
+            <div style="font-size: 0.9em; color: #00cc33;">> FTP SERVER ACTIVE</div>
             <button class="transfers-toggle" id="transfersToggle">Transfers (0)</button>
         </div>
         <div class="progress-container" id="progressContainer">
@@ -412,20 +490,35 @@ a {
             <div class="progress-text" id="progressText"></div>
         </div>
         ''')
+        r.append('</div>')
+        r.append('<div class="content-section">')
         r.append(f'<h2>Index of {displaypath}</h2><hr>')
-        r.append('<table><tr><th class="icon">Type</th><th>Name</th></tr>')
+        r.append('<table><tr><th class="icon"></th><th>Name</th><th class="size">Size</th></tr>')
 
         if displaypath != '/':
-            r.append(f'<tr><td class="icon">{self.ICONS["folder"]}</td><td><a href="..">[..]</a></td></tr>')
+            up_icon = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff41" stroke-width="1.5"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>'
+            r.append(f'<tr><td class="icon">{up_icon}</td><td><a href="..">[..]</a></td><td class="size">-</td></tr>')
 
         for name in entries:
             fullname = os.path.join(path, name)
             icon = self.get_icon(name, os.path.isdir(fullname))
             displayname = name + '/' if os.path.isdir(fullname) else name
             linkname = name + '/' if os.path.isdir(fullname) else name
-            r.append(f'<tr><td class="icon">{icon}</td><td><a href="{linkname}">{displayname}</a></td></tr>')
+
+            if os.path.isdir(fullname):
+                size_str = "-"
+            else:
+                try:
+                    size = os.path.getsize(fullname)
+                    size_str = self.format_size(size)
+                except OSError:
+                    size_str = "?"
+
+            r.append(f'<tr><td class="icon">{icon}</td><td><a href="{linkname}">{displayname}</a></td><td class="size">{size_str}</td></tr>')
 
         r.append('</table><hr>')
+        r.append('</div>')
+        r.append('<div class="footer-section">')
         r.append('''
                     <div class="upload">
                 <form enctype="multipart/form-data" method="post" id="uploadForm">
@@ -438,7 +531,10 @@ a {
                     <input type="submit" value="Upload">
                 </form>
             </div>
-
+        ''')
+        r.append('</div>')
+        r.append('</div>')
+        r.append('''
             <script>
                 let activeTransfers = 0;
 
@@ -580,6 +676,15 @@ a {
             return self.ICONS['archive']
         else:
             return self.ICONS['file']
+
+    def format_size(self, size):
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size < 1024.0:
+                if unit == 'B':
+                    return f"{int(size)} {unit}"
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} PB"
 
 
 def get_lan_ip_address():
